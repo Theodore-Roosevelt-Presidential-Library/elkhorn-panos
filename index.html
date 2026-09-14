@@ -1,17 +1,377 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Elkhorn Ruins</title>
+<meta charset="utf-8">
+<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width, shrink-to-fit=no">
+<title>Elkhorn Ranch in 360&deg; | Theodore Roosevelt Presidential Library</title>
+<meta name="description" content="Stand on the ground of Theodore Roosevelt's Elkhorn Ranch, thirty-five miles north of Medora on the Little Missouri, in seven 360-degree panoramas.">
+<meta property="og:title" content="Elkhorn Ranch in 360&deg;">
+<meta property="og:description" content="Seven 360-degree views of the site of Theodore Roosevelt's home ranch on the Little Missouri.">
+<meta property="og:image" content="https://elkhorn.labs.trlibrary.com/thumbs/6.jpg">
+<meta name="theme-color" content="#092A4D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Gelasio:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#092A4D; --forest:#1B4532; --bright-forest:#8FC895;
+  --sand:#D1CCBD; --gray:#25282A; --deep-orange:#E7805D;
+  --sunset-orange:#FC924E; --gray-sky:#99ADC5;
+  --display:"Oswald","Haettenschweiler","Arial Narrow",sans-serif;
+  --body:"Gelasio",Georgia,"Times New Roman",serif;
+  --ui:"Helvetica Neue",Arial,sans-serif;
+  --rail-h:132px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;width:100%;overflow:hidden;background:var(--night);
+  color:var(--sand);font-family:var(--body);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--sunset-orange);outline-offset:2px}
+
+/* ---------- viewer ---------- */
+#viewer{position:fixed;inset:0;background:var(--night)}
+#viewer canvas{display:block}
+
+/* ---------- loading ---------- */
+#loader{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px;background:var(--night);z-index:60;
+  transition:opacity .6s ease;pointer-events:none}
+#loader.hidden{opacity:0}
+#loader .mark{font-family:var(--display);font-weight:600;letter-spacing:.22em;
+  font-size:13px;text-transform:uppercase;color:var(--gray-sky)}
+#bar{width:min(260px,50vw);height:2px;background:rgba(209,204,189,.18);overflow:hidden}
+#bar span{display:block;height:100%;width:0;background:var(--deep-orange);transition:width .25s ease}
+#pct{font-family:var(--ui);font-size:11px;letter-spacing:.14em;color:var(--gray-sky)}
+
+/* ---------- top bar ---------- */
+#top{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:flex-start;
+  justify-content:space-between;gap:16px;padding:18px 20px 44px;
+  background:linear-gradient(to bottom,rgba(9,42,77,.82),rgba(9,42,77,0));
+  transition:opacity .3s ease}
+#top .eyebrow{font-family:var(--display);font-weight:500;letter-spacing:.2em;font-size:10px;
+  text-transform:uppercase;color:var(--gray-sky);margin:0 0 4px;line-height:1.4}
+#top h1{font-family:var(--display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  font-size:clamp(20px,3.4vw,30px);margin:0;line-height:1;color:#fff}
+#top h1 .deg{color:var(--deep-orange)}
+.actions{display:flex;gap:8px;flex:none}
+.btn{font-family:var(--display);font-weight:500;text-transform:uppercase;letter-spacing:.12em;
+  font-size:12px;padding:9px 14px;border:1px solid rgba(209,204,189,.35);border-radius:2px;
+  background:rgba(9,42,77,.45);backdrop-filter:blur(6px);white-space:nowrap;
+  transition:background .2s,border-color .2s,color .2s}
+.btn:hover{background:var(--deep-orange);border-color:var(--deep-orange);color:var(--night)}
+.btn.icon{padding:9px 11px;line-height:1}
+
+/* ---------- caption + rail ---------- */
+#bottom{position:fixed;left:0;right:0;bottom:0;z-index:30;
+  background:linear-gradient(to top,rgba(9,42,77,.92) 55%,rgba(9,42,77,0));
+  padding:56px 20px 16px;transition:transform .35s ease,opacity .3s ease}
+#caption{max-width:640px;margin:0 auto 14px;text-align:center}
+#caption .idx{font-family:var(--ui);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--deep-orange);display:block;margin-bottom:5px}
+#caption h2{font-family:var(--display);font-weight:500;text-transform:uppercase;letter-spacing:.1em;
+  font-size:clamp(16px,2.2vw,20px);margin:0 0 5px;color:#fff}
+#caption p{margin:0;font-size:14px;line-height:1.5;color:var(--sand);opacity:.9}
+#rail{display:flex;gap:8px;justify-content:center;overflow-x:auto;padding:4px 2px 2px;
+  scrollbar-width:thin;scrollbar-color:rgba(209,204,189,.3) transparent}
+#rail::-webkit-scrollbar{height:4px}
+#rail::-webkit-scrollbar-thumb{background:rgba(209,204,189,.3);border-radius:2px}
+.thumb{position:relative;flex:none;width:112px;height:56px;border-radius:2px;overflow:hidden;
+  border:1px solid rgba(209,204,189,.25);opacity:.62;transition:opacity .2s,border-color .2s,transform .2s}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .n{position:absolute;left:4px;bottom:3px;font-family:var(--display);font-size:11px;
+  font-weight:600;letter-spacing:.08em;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.thumb:hover{opacity:.92;transform:translateY(-2px)}
+.thumb[aria-pressed="true"]{opacity:1;border-color:var(--deep-orange);box-shadow:0 0 0 1px var(--deep-orange)}
+.nav{position:fixed;top:50%;transform:translateY(-50%);z-index:30;width:44px;height:64px;
+  display:flex;align-items:center;justify-content:center;font-size:26px;line-height:1;
+  color:#fff;background:rgba(9,42,77,.4);backdrop-filter:blur(4px);opacity:.65;transition:opacity .2s,background .2s}
+.nav:hover{opacity:1;background:var(--deep-orange);color:var(--night)}
+#prev{left:0;border-radius:0 3px 3px 0}
+#next{right:0;border-radius:3px 0 0 3px}
+
+/* ---------- hint ---------- */
+#hint{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:25;
+  font-family:var(--ui);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(255,255,255,.85);text-shadow:0 2px 10px rgba(0,0,0,.6);pointer-events:none;
+  transition:opacity .8s ease}
+#hint.gone{opacity:0}
+
+/* ---------- drawer ---------- */
+#scrim{position:fixed;inset:0;z-index:40;background:rgba(9,42,77,.55);backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:opacity .35s ease}
+#scrim.open{opacity:1;pointer-events:auto}
+#drawer{position:fixed;top:0;right:0;bottom:0;z-index:50;width:min(480px,100%);
+  background:var(--night);border-left:3px solid var(--deep-orange);
+  transform:translateX(100%);transition:transform .4s cubic-bezier(.22,.61,.36,1);
+  overflow-y:auto;overscroll-behavior:contain;box-shadow:-18px 0 50px rgba(0,0,0,.45)}
+#drawer.open{transform:translateX(0)}
+#drawer .inner{padding:26px 30px 60px}
+#closeDrawer{position:sticky;top:0;float:right;margin:-6px -8px 0 0;font-size:22px;line-height:1;
+  padding:6px 10px;color:var(--gray-sky)}
+#closeDrawer:hover{color:var(--deep-orange)}
+#drawer .kicker{font-family:var(--display);font-weight:500;letter-spacing:.2em;font-size:10px;
+  text-transform:uppercase;color:var(--deep-orange);margin:0 0 8px}
+#drawer h2{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+  font-size:26px;line-height:1.05;margin:0 0 18px;color:#fff}
+#drawer h3{font-family:var(--display);font-weight:500;text-transform:uppercase;letter-spacing:.12em;
+  font-size:13px;margin:28px 0 8px;color:var(--bright-forest)}
+#drawer p{font-size:15.5px;line-height:1.65;margin:0 0 14px;color:var(--sand)}
+#drawer blockquote{margin:20px 0;padding:2px 0 2px 18px;border-left:2px solid var(--deep-orange)}
+#drawer blockquote p{font-style:italic;color:#fff;font-size:16px;line-height:1.6;margin-bottom:8px}
+#drawer blockquote cite{font-family:var(--ui);font-style:normal;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--gray-sky)}
+.facts{list-style:none;margin:14px 0 0;padding:0;border-top:1px solid rgba(209,204,189,.18)}
+.facts li{display:flex;gap:14px;padding:9px 0;border-bottom:1px solid rgba(209,204,189,.18);font-size:14px}
+.facts dt,.facts .k{font-family:var(--ui);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gray-sky);flex:0 0 116px;padding-top:2px}
+.facts .v{flex:1;color:var(--sand);line-height:1.45}
+#drawer .foot{margin-top:26px;padding-top:16px;border-top:1px solid rgba(209,204,189,.18);
+  font-family:var(--ui);font-size:11.5px;line-height:1.6;color:var(--gray-sky)}
+#drawer a{color:var(--deep-orange)}
+
+/* ---------- ui hidden mode ---------- */
+body.ui-off #top,body.ui-off #bottom,body.ui-off .nav{opacity:0;pointer-events:none}
+
+@media (max-width:720px){
+  #top{padding:14px 14px 36px}
+  #bottom{padding:44px 12px 12px}
+  #caption p{display:none}
+  #rail{justify-content:flex-start}
+  .thumb{width:88px;height:46px}
+  .nav{display:none}
+  #drawer .inner{padding:22px 20px 50px}
+}
+</style>
 </head>
 <body>
-    <h1>Elkhorn Ruins 360</h1>
-    <ul>
-        <li><a href="1.html">Pano 1</a></li>
-        <li><a href="2.html">Pano 2</a></li>
-        <li><a href="3.html">Pano 3</a></li>
-        <li><a href="4.html">Pano 4</a></li>
-        <li><a href="5.html">Pano 5</a></li>
-        <li><a href="6.html">Pano 6</a></li>
-        <li><a href="7.html">Pano 7</a></li>
+
+<div id="viewer"></div>
+
+<div id="loader">
+  <div class="mark">Elkhorn Ranch</div>
+  <div id="bar"><span></span></div>
+  <div id="pct">Loading</div>
+</div>
+
+<div id="hint">Drag to look around</div>
+
+<header id="top">
+  <div>
+    <p class="eyebrow">Theodore Roosevelt Presidential Library</p>
+    <h1>Elkhorn Ranch <span class="deg">360&deg;</span></h1>
+  </div>
+  <div class="actions">
+    <button class="btn" id="openDrawer" aria-haspopup="dialog">The Story</button>
+    <button class="btn icon" id="fs" title="Full screen" aria-label="Toggle full screen">&#9974;</button>
+  </div>
+</header>
+
+<button class="nav" id="prev" aria-label="Previous view">&#8249;</button>
+<button class="nav" id="next" aria-label="Next view">&#8250;</button>
+
+<div id="bottom">
+  <div id="caption" aria-live="polite">
+    <span class="idx" id="capIdx"></span>
+    <h2 id="capTitle"></h2>
+    <p id="capText"></p>
+  </div>
+  <div id="rail" role="tablist" aria-label="Choose a view"></div>
+</div>
+
+<div id="scrim"></div>
+<aside id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
+  <div class="inner">
+    <button id="closeDrawer" aria-label="Close">&times;</button>
+    <p class="kicker">Where this is</p>
+    <h2 id="drawerTitle">A house on the river brink</h2>
+
+    <p>In February 1884, Theodore Roosevelt lost his wife Alice and his mother Mittie on the same day, in the same house. He went back to Dakota Territory looking for solitude. His first ranch, the Maltese Cross, sat near a busy carriage road and the railroad &mdash; too close to everything to give him any. That summer he picked a second site thirty-five miles north of Medora, on the banks of the Little Missouri, in a grove of cottonwoods, and named it the Elkhorn.</p>
+
+    <p>He hired two Maine woodsmen, Bill Sewall and Wilmot Dow, to build it and run it. Work started in the winter of 1884&ndash;85 and finished that spring: a long, low house of cottonwood logs, thirty feet by sixty, with seven-foot walls, eight rooms, and a piazza along the east wall. Around it stood a barn &mdash; two stables joined by a roofed breezeway &mdash; plus a cattle shed, a chicken house, and a blacksmith shop.</p>
+
+    <blockquote>
+      <p>&ldquo;My home ranch-house stands on the river brink. From the low, long veranda, shaded by leafy cotton-woods, one looks across sand bars and shallows to a strip of meadowland, behind which rises a line of sheer cliffs and grassy plateaus.&rdquo;</p>
+      <cite>Theodore Roosevelt, Hunting Trips of a Ranchman</cite>
+    </blockquote>
+
+    <h3>What the winter took</h3>
+    <p>The Elkhorn became the center of Roosevelt's Badlands life &mdash; the ranch he called his home ranch, the porch where he wrote, the landing where a boat was stolen out from under him in the spring of 1886, sending him on a three-day chase down an ice-choked river with a copy of <em>Anna Karenina</em> in his lap.</p>
+
+    <p>Then came the winter of 1886&ndash;87, remembered on the northern plains as the Winter of the Blue Snow. It killed cattle across the open range by the hundreds of thousands, Roosevelt's herd among them. He closed the Elkhorn and sold off the last of his cattle interests in 1898. He left the Badlands a failed cattleman &mdash; and a man who had watched a landscape be used up. As president he would go on to conserve an estimated 230 million acres of American land.</p>
+
+    <h3>Where it sits today</h3>
+    <p>Nothing of the house is standing. The logs were hauled away and reused long ago. What is left is the outline: foundation stones on the riverbank, and cottonwoods east of them old enough to have shaded the porch.</p>
+
+    <p>The ground in these views is the Elkhorn Ranch Unit of Theodore Roosevelt National Park &mdash; the most remote and least developed of the park's three units, about thirty-five miles from Medora by gravel road through the Little Missouri National Grassland. There is no visitor center and no reconstruction. There is a trail, a handful of interpretive panels carrying Roosevelt's own words, the cottonwoods, and the river.</p>
+
+    <ul class="facts">
+      <li><span class="k">Founded</span><span class="v">Site chosen 1884; buildings finished spring 1885</span></li>
+      <li><span class="k">Ranch house</span><span class="v">30 &times; 60 feet, eight rooms, cottonwood logs</span></li>
+      <li><span class="k">Built by</span><span class="v">Bill Sewall and Wilmot Dow, of Island Falls, Maine</span></li>
+      <li><span class="k">Closed</span><span class="v">After the winter of 1886&ndash;87</span></li>
+      <li><span class="k">Today</span><span class="v">Elkhorn Ranch Unit, Theodore Roosevelt National Park</span></li>
+      <li><span class="k">Getting there</span><span class="v">Gravel road from Medora; impassable when wet &mdash; check conditions at a park visitor center first</span></li>
     </ul>
+
+    <p class="foot">Panoramas photographed on site by the Theodore Roosevelt Presidential Library. Drag to look around; scroll to zoom; use the arrow keys or the strip at the bottom to move between views. Press <strong>H</strong> to hide the interface.</p>
+  </div>
+</aside>
+
+<script src="./js/three.min.js"></script>
+<script src="./js/panolens.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var VIEWS = [
+    { id:1, title:'Cottonwood Bottomland',
+      text:'A footpath through river-bottom grass, with the cottonwood grove ahead and the badlands rims low on both horizons.' },
+    { id:2, title:'The Gate',
+      text:'A two-track ranch road, a wire fence, and an open gate standing under a leaning cottonwood.' },
+    { id:3, title:'Sage Flat',
+      text:'Sagebrush and prairie grass running out to the tree line, with bluffs rising at the left.' },
+    { id:4, title:'The Fence Line',
+      text:'Posts and wire across the flat, and the buttes of the Little Missouri breaks on the far side.' },
+    { id:5, title:'Old Growth and Deadfall',
+      text:'Standing cottonwoods and a tangle of fallen limbs at the edge of the grove.' },
+    { id:6, title:'The Interpretive Panels',
+      text:'Three panels where the trail opens up, carrying Roosevelt’s own words about the ground in front of you.' },
+    { id:7, title:'Trail Junction',
+      text:'A weathered rail marks where the paths meet among the cottonwoods.' }
+  ];
+
+  var $ = function (s) { return document.querySelector(s); };
+  var loader = $('#loader'), bar = $('#bar span'), pct = $('#pct'), hint = $('#hint');
+  var capIdx = $('#capIdx'), capTitle = $('#capTitle'), capText = $('#capText');
+  var rail = $('#rail'), drawer = $('#drawer'), scrim = $('#scrim');
+  var cache = {}, current = null, firstLoad = true;
+
+  var viewer = new PANOLENS.Viewer({
+    container: $('#viewer'),
+    controlBar: false,
+    autoHideInfospot: false,
+    output: 'none'
+  });
+
+  /* ---------- thumbnail rail ---------- */
+  VIEWS.forEach(function (v) {
+    var b = document.createElement('button');
+    b.className = 'thumb';
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-pressed', 'false');
+    b.setAttribute('aria-label', 'View ' + v.id + ': ' + v.title);
+    b.innerHTML = '<img src="./thumbs/' + v.id + '.jpg" alt="" loading="lazy" width="112" height="56">' +
+                  '<span class="n">' + v.id + '</span>';
+    b.addEventListener('click', function () { go(v.id, true); });
+    v.el = b;
+    rail.appendChild(b);
+  });
+
+  /* ---------- loading UI ---------- */
+  function showLoader() {
+    bar.style.width = '0%';
+    pct.textContent = 'Loading';
+    loader.classList.remove('hidden');
+    loader.style.display = 'flex';
+  }
+  function hideLoader() {
+    loader.classList.add('hidden');
+    setTimeout(function () { loader.style.display = 'none'; }, 650);
+    if (firstLoad) {
+      firstLoad = false;
+      setTimeout(function () { hint.classList.add('gone'); }, 3200);
+    }
+  }
+
+  /* ---------- panorama factory ---------- */
+  function panoramaFor(id) {
+    if (cache[id]) return cache[id];
+    var p = new PANOLENS.ImagePanorama('./panos/' + id + '.jpg');
+    p.addEventListener('progress', function (e) {
+      if (!e.progress || !e.progress.total) return;
+      var n = Math.min(100, Math.round(e.progress.loaded / e.progress.total * 100));
+      bar.style.width = n + '%';
+      pct.textContent = n + '%';
+    });
+    p.addEventListener('enter-fade-start', hideLoader);
+    p.addEventListener('error', function () { pct.textContent = 'Could not load this view'; });
+    cache[id] = p;
+    viewer.add(p);
+    return p;
+  }
+
+  /* ---------- navigation ---------- */
+  function go(id, push) {
+    id = Number(id);
+    if (!VIEWS.some(function (v) { return v.id === id; })) id = 1;
+    if (id === current) return;
+
+    var fresh = !cache[id];
+    if (fresh) showLoader();
+
+    var p = panoramaFor(id);
+    if (viewer.panorama !== p) viewer.setPanorama(p);
+    if (!fresh) hideLoader();
+
+    current = id;
+    var v = VIEWS[id - 1];
+    capIdx.textContent = 'View ' + id + ' of ' + VIEWS.length;
+    capTitle.textContent = v.title;
+    capText.textContent = v.text;
+    document.title = 'Elkhorn Ranch 360° — ' + v.title;
+
+    VIEWS.forEach(function (o) {
+      o.el.setAttribute('aria-pressed', o.id === id ? 'true' : 'false');
+    });
+    v.el.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+
+    if (push && location.hash !== '#' + id) history.pushState({ id: id }, '', '#' + id);
+  }
+
+  function step(d) {
+    var i = VIEWS.findIndex(function (v) { return v.id === current; });
+    go(VIEWS[(i + d + VIEWS.length) % VIEWS.length].id, true);
+  }
+
+  $('#prev').addEventListener('click', function () { step(-1); });
+  $('#next').addEventListener('click', function () { step(1); });
+  window.addEventListener('popstate', function () { go(parseInt(location.hash.slice(1), 10) || 1, false); });
+
+  /* ---------- drawer ---------- */
+  function setDrawer(open) {
+    drawer.classList.toggle('open', open);
+    scrim.classList.toggle('open', open);
+    drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (open) { drawer.scrollTop = 0; $('#closeDrawer').focus(); }
+    else { $('#openDrawer').focus(); }
+  }
+  $('#openDrawer').addEventListener('click', function () { setDrawer(true); });
+  $('#closeDrawer').addEventListener('click', function () { setDrawer(false); });
+  scrim.addEventListener('click', function () { setDrawer(false); });
+
+  /* ---------- full screen ---------- */
+  $('#fs').addEventListener('click', function () {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+  });
+
+  /* ---------- keyboard ---------- */
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'Escape') { setDrawer(false); return; }
+    if (drawer.classList.contains('open')) return;
+    if (k === 'ArrowRight') { step(1); e.preventDefault(); }
+    else if (k === 'ArrowLeft') { step(-1); e.preventDefault(); }
+    else if (k >= '1' && k <= String(VIEWS.length)) { go(parseInt(k, 10), true); }
+    else if (k === 'h' || k === 'H') { document.body.classList.toggle('ui-off'); }
+    else if (k === 'i' || k === 'I') { setDrawer(true); }
+  });
+
+  /* ---------- start ---------- */
+  go(parseInt(location.hash.slice(1), 10) || 1, false);
+})();
+</script>
 </body>
 </html>
